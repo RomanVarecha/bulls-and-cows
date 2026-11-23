@@ -1,10 +1,12 @@
-"""Projekt 2: Bulls & Cows"""
+"""Projekt 2:Bulls & Cows"""
 
 import random
 import time
 
 SEPARATOR = "-" * 47
 DIGITS = 4
+AMAZING_LIMIT = 5
+AVERAGE_LIMIT = 10
 
 
 def generate_secret() -> str:
@@ -20,14 +22,12 @@ def generate_secret() -> str:
 
 
 def check_guess(guess: str) -> str:
-    """Zkontroluje tip hráče.
-
-    Vrátí text chyby, nebo prázdný řetězec, když je tip v pořádku.
-    """
-    if guess == "":
+    """Vrátí text chyby v tipu, nebo prázdný řetězec, když je tip v pořádku."""
+    if not guess:
         return "You didn't enter anything."
-    if not guess.isdigit():
-        return "Please enter only digits."
+    for char in guess:
+        if char not in "0123456789":
+            return "Please enter only digits."
     if len(guess) != DIGITS:
         return f"The number must have exactly {DIGITS} digits."
     if guess[0] == "0":
@@ -40,8 +40,8 @@ def check_guess(guess: str) -> str:
 def count_bulls(secret: str, guess: str) -> int:
     """Spočítá číslice, které jsou na správném místě."""
     bulls = 0
-    for i in range(DIGITS):
-        if guess[i] == secret[i]:
+    for secret_digit, guess_digit in zip(secret, guess):
+        if guess_digit == secret_digit:
             bulls += 1
     return bulls
 
@@ -49,8 +49,8 @@ def count_bulls(secret: str, guess: str) -> int:
 def count_cows(secret: str, guess: str) -> int:
     """Spočítá číslice, které v čísle jsou, ale na jiném místě."""
     cows = 0
-    for i in range(DIGITS):
-        if guess[i] != secret[i] and guess[i] in secret:
+    for secret_digit, guess_digit in zip(secret, guess):
+        if guess_digit != secret_digit and guess_digit in secret:
             cows += 1
     return cows
 
@@ -64,21 +64,21 @@ def word_form(count: int, singular: str, plural: str) -> str:
 
 def rating(guesses: int) -> str:
     """Ohodnotí hru podle počtu pokusů."""
-    if guesses <= 5:
+    if guesses <= AMAZING_LIMIT:
         return "That's amazing!"
-    if guesses <= 10:
+    if guesses <= AVERAGE_LIMIT:
         return "That's average."
     return "That's not so good."
 
 
 def print_intro() -> None:
     """Vypíše úvodní text hry."""
-    print(SEPARATOR)
-    print(f"I've generated a random {DIGITS} digit number for you.")
-    print("Let's play a bulls and cows game.")
-    print(SEPARATOR)
-    print("Enter a number:")
-    print(SEPARATOR)
+    print(f"""{SEPARATOR}
+I've generated a random {DIGITS} digit number for you.
+Let's play a bulls and cows game.
+{SEPARATOR}
+Enter a number:
+{SEPARATOR}""")
 
 
 def play_game() -> int:
@@ -89,7 +89,7 @@ def play_game() -> int:
     while True:
         guess = input(">>> ").strip()
         error = check_guess(guess)
-        if error != "":
+        if error:
             print(error)
             print(SEPARATOR)
             continue
@@ -100,15 +100,16 @@ def play_game() -> int:
         if bulls == DIGITS:
             return guesses
 
-        print(f"{bulls} {word_form(bulls, 'bull', 'bulls')}, "
-              f"{cows} {word_form(cows, 'cow', 'cows')}")
+        bull_word = word_form(bulls, "bull", "bulls")
+        cow_word = word_form(cows, "cow", "cows")
+        print(f"{bulls} {bull_word}, {cows} {cow_word}")
         print(SEPARATOR)
 
 
 def ask_play_again() -> bool:
     """Zeptá se hráče, jestli chce hrát znovu."""
     while True:
-        answer = input("Do you want to play again? (y/n): ").lower()
+        answer = input("Do you want to play again? (y/n): ").strip().lower()
         if answer == "y":
             return True
         if answer == "n":
@@ -123,13 +124,14 @@ def main() -> None:
 
     while True:
         print_intro()
-        start = time.time()
+        start = time.perf_counter()
         guesses = play_game()
-        seconds = round(time.time() - start)
+        seconds = round(time.perf_counter() - start)
         results.append(guesses)
 
         print("Correct, you've guessed the right number")
-        print(f"in {guesses} {word_form(guesses, 'guess', 'guesses')}!")
+        guess_word = word_form(guesses, "guess", "guesses")
+        print(f"in {guesses} {guess_word}!")
         print(f"It took you {seconds} seconds.")
         print(SEPARATOR)
         print(rating(guesses))
